@@ -6,14 +6,18 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "start-server": "node server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express-session": "^1.18.0",
+    "passport": "^0.7.0",
+    "passport-github": "^1.1.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-scripts": "^5.0.0"
   },
-  "devDependencies": {},
   "browserslist": {
     "production": [
       ">0.2%",
