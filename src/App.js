@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import LeaderBoard from './LeaderBoard';
 
 function Square({ value, onSquareClick }) {
   return (
@@ -39,21 +40,6 @@ function Board({ xIsNext, squares, onPlay }) {
   );
 }
 
-function LeaderBoard({ leaderBoard }) {
-  return (
-    <div className="leaderboard">
-      <h2>LeaderBoard</h2>
-      <ol>
-        {leaderBoard.map((player, index) => (
-          <li key={index}>
-            {player.userName} - Wins or Ties: {player.totalWinsOrTies}
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
 export default function Game() {
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
@@ -75,49 +61,28 @@ export default function Game() {
     );
   });
 
-  const [leaderBoard, setLeaderBoard] = useState([]);
-
-  useEffect(() => {
-    // Replace 'your-backend-url' with the actual backend server URL
-    fetch('your-backend-url/api/GetLewisTacToeLeaders')
-      .then(response => response.json())
-      .then(data => {
-        setLeaderBoard(data.slice(0, 3)); // Assuming you want the top 3 players
-      })
-      .catch(error => {
-        console.error('Error fetching leaderboard data:', error);
-      });
-  }, []);  
-
   function jumpTo(move) {
     setCurrentMove(move);
   }
 
-  function handleWinOrTie() {
-    // Assuming sessionStorage has 'authenticated' set after successful GitHub login
-    if (!sessionStorage.getItem('authenticated')) {
-      window.location.href = 'http://localhost:3001/auth/github/callback';
-    } else {
-      fetch('http:localhost:3001/api/AddWinOrTie', {
-        method: 'POST',
-        credentials: 'include', // Needed to include session cookie in request
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ user: sessionStorage.getItem('authenticated'), winOrTie: 'win' }), // Pass the relevant data
-      })
-      .then(response => response.json())
-      .then(data => {
-        // Handle success, update leaderboard if necessary
-        if (data.success) {
-          // Refresh leaderboard or add logic to update state with new win/tie
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+  const [leaders, setLeaders] = useState([]);
+
+  const fetchLeaderboardData = () => {
+    fetch('http://localhost:3001/api/GetLewisTacToeLeaders')
+    .then(response => response.json())
+    .then(data => {
+      setLeaders(data);
+    })
+    .catch(error => {
+      console.error('Error fetching leaderboard data:', error);
+    });
+  };
+
+  useEffect(() => {
+    if (sessionStorage.getItem('authenticated')) {
+      fetchLeaderboardData();
     }
-  }  
+  }, []);
 
   const winner = calculateWinner(currentSquares);
   let status;
@@ -125,6 +90,35 @@ export default function Game() {
     status = "Winner: " + winner;
   } else {
     status = "Next player: " + (xIsNext ? "X" : "O");
+  }
+
+  function handleWinOrTie() {
+    // test to see if the authenticated state is working
+  ////  console.log('Authenticated State:', sessionStorage.getItem('authenticated'));
+
+    if (!sessionStorage.getItem('authenticated')) {
+      window.location.href = 'http://localhost:3001/auth/github'; // Redirect for GitHub authentication
+    } else {
+////      const user = sessionStorage.getItem('authenticated'); // Assuming you store the username or identifier in sessionStorage
+      fetch('http://localhost:3001/api/AddWinOrTie', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user, winOrTie: 'win' }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Optionally refresh the leaderboard here or through a state update
+          fetchLeaderboardData();
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
   }
 
   return (
@@ -136,7 +130,7 @@ export default function Game() {
       <div className="game-info">
         <div>{moves}</div>
       </div>
-      <LeaderBoard leaderBoard={leaderBoard} />
+      <LeaderBoard leaders={leaders} />
       <button onClick={handleWinOrTie}>I Just Won (or Tied)</button>
     </div>
   );
